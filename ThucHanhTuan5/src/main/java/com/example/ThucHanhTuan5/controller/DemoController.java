@@ -1,6 +1,22 @@
 package com.example.ThucHanhTuan5.controller;
 
 import java.util.List;
+import java.util.Properties;
+
+import java.util.Properties;
+import javax.jms.Connection;
+import javax.jms.ConnectionFactory;
+import javax.jms.Destination;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageListener;
+import javax.jms.MessageProducer;
+import javax.jms.Session;
+import javax.jms.TextMessage;
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import org.apache.log4j.BasicConfigurator;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -9,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.ThucHanhTuan5.entity.MayBay;
 import com.example.ThucHanhTuan5.entity.NhanVien;
+import com.example.ThucHanhTuan5.frame.Nguoi2;
 import com.example.ThucHanhTuan5.repository.MayBayRepository;
 import com.example.ThucHanhTuan5.repository.NhanVienRepository;
 import com.example.ThucHanhTuan5.entity.ChuyenBay;
@@ -32,8 +49,54 @@ public class DemoController {
 	}
 	
 	@GetMapping("/Cau1")
-	public List<ChuyenBay> Cau1() {
+	public List<ChuyenBay> Cau1() throws Exception{
 		List<ChuyenBay> temp = chuyenBayRepository.chuyenBayDaLat();
+		BasicConfigurator.configure();
+		//config environment for JNDI
+		Properties settings=new Properties();
+		settings.setProperty(Context.INITIAL_CONTEXT_FACTORY, 
+				"org.apache.activemq.jndi.ActiveMQInitialContextFactory");
+		settings.setProperty(Context.PROVIDER_URL, "tcp://localhost:61616");
+		//create context
+		Context ctx=new InitialContext(settings);
+		//lookup JMS connection factory
+		ConnectionFactory factory=
+				(ConnectionFactory)ctx.lookup("TopicConnectionFactory");
+		//lookup destination. (If not exist-->ActiveMQ create once)
+		Destination destination=
+				(Destination) ctx.lookup("dynamicTopics/sangnguyen");
+		Destination destination1=
+				(Destination) ctx.lookup("dynamicTopics/dauthi");
+		//get connection using credential
+		Connection con=factory.createConnection("admin","admin");
+		//connect to MOM
+		con.start();
+		//create session
+		Session session=con.createSession(
+				/*transaction*/false,
+				/*ACK*/Session.AUTO_ACKNOWLEDGE
+				);
+		//create producer
+		MessageConsumer receiver = session.createConsumer(destination);
+		
+		MessageProducer producer = session.createProducer(destination);
+		Message msg=session.createTextMessage(temp.toString());
+		producer.send(msg);
+		
+		receiver.setMessageListener(new MessageListener() {			
+			public void onMessage(Message msg) {
+				try {
+					if (msg instanceof TextMessage) {
+						TextMessage tm = (TextMessage) msg;
+						String txt = tm.getText();						
+						System.out.println(txt);
+						msg.acknowledge();
+					}
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		});
 		return temp;
 	}
 	
