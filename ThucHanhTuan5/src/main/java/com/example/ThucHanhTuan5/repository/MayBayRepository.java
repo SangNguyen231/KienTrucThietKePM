@@ -13,6 +13,9 @@ import com.example.ThucHanhTuan5.entity.MayBay;
 @Repository
 public interface MayBayRepository extends CrudRepository<MayBay, Integer>{
 	
+	@Query(value = "select * from maybay",nativeQuery = true)
+	public List<MayBay> getAllMayBays();
+	
 	@Query(value = "select * from maybay where tam_bay > 10000",nativeQuery = true)
 	public List<MayBay> tamBayLonHon10000();
 	

@@ -1,6 +1,7 @@
 package com.example.ThucHanhTuan5.controller;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Properties;
 
 import java.util.Properties;
@@ -19,7 +20,14 @@ import javax.naming.InitialContext;
 import org.apache.log4j.BasicConfigurator;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -28,6 +36,7 @@ import com.example.ThucHanhTuan5.entity.NhanVien;
 import com.example.ThucHanhTuan5.frame.Nguoi2;
 import com.example.ThucHanhTuan5.repository.MayBayRepository;
 import com.example.ThucHanhTuan5.repository.NhanVienRepository;
+import com.example.ThucHanhTuan5.service.MayBayService;
 import com.example.ThucHanhTuan5.entity.ChuyenBay;
 import com.example.ThucHanhTuan5.repository.ChuyenBayRepository;
 
@@ -43,10 +52,41 @@ public class DemoController {
 	@Autowired
 	private NhanVienRepository nhanVienRepository;
 	
+	@Autowired
+	private MayBayService mayBayservice;
+	
 	@RequestMapping("hello")
 	public String hello() {
 		return "Hello";
 	}
+	
+	@PostMapping("/MayBay")
+	public void add(@RequestBody MayBay mayBay) {
+		mayBayservice.save(mayBay);
+	}
+	
+	@DeleteMapping("/MayBay/{id}")
+	public void deleteMayBay(@PathVariable Integer id) {
+		mayBayservice.delete(id);
+	}
+	
+	@PutMapping("/MayBay/{id}")
+	public ResponseEntity<?> update(@RequestBody MayBay mayBay, @PathVariable Integer id) {
+	    try {
+	        MayBay existProduct = mayBayservice.get(id);
+	        mayBayservice.save(mayBay);
+	        return new ResponseEntity<>(HttpStatus.OK);
+	    } catch (NoSuchElementException e) {
+	        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+	    }      
+	}
+	
+	@GetMapping("/getAllMayBay")
+	public List<MayBay> getAllMayBay() {
+		List<MayBay> mayBays = mayBayRepository.getAllMayBays();
+		return mayBays;
+	}
+	
 	
 	@GetMapping("/Cau1")
 	public List<ChuyenBay> Cau1() throws Exception{
